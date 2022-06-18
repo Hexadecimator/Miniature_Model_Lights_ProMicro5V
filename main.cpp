@@ -1,14 +1,15 @@
 #include <Arduino.h>
 
 bool debug_startup = true; // set this false to stop the debug light sequence that
-                           // 
+                           // turns all lights on one by one to make sure none are
+                           // burnt out
+bool simple_light_pattern = true; // TODO - control this with an external switch
 
 uint8_t light_sequence[6] = { 2, 3, A0, A1, A2, A3 };
 
 int bright = 170;
 unsigned long rdm_delayer = 100;
 int rdm_on_off = 0;
-
 unsigned long update_seed_time = 180000; // 180000 = 30 minutes (i think)
 unsigned long last_seed_update_time = 0;
 
@@ -93,18 +94,23 @@ void setup() {
   if(debug_startup) testLights();
 }
 
-
 void loop() {
-  int pattern_chooser = random(0, 100);
+  // TODO - control simple_light_pattern with an external hardware switch instead of hard-coding
+  if(simple_light_pattern) {
+    randomOnOff();
+  }
+  else {
+    int pattern_chooser = random(0, 100);
+    if(pattern_chooser >= 97) sequence1();
+    else if (pattern_chooser >= 80 && pattern_chooser < 96) sequence2();
+    else randomOnOff();
+  }
   
-  if(pattern_chooser >= 97) sequence1();
-  else if (pattern_chooser >= 80 && pattern_chooser < 96) sequence2();
-  else randomOnOff();
-
   delay(random(250, 750));  
   
   // try to continually randomize the randomness
   if(millis() - last_seed_update_time >= update_seed_time) {
     randomSeed(analogRead(A4));
+    last_seed_update_time = millis();
   } 
 }
